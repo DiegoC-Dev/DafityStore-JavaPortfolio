@@ -9,7 +9,10 @@ import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import net.ConnectionMySQL;
 
@@ -22,6 +25,7 @@ public class Manager {
 	private ArrayList<Order> orderList;
 	private ArrayList<Client> clientList;
 	private ConnectionMySQL connMySQL;
+	private boolean dbAvailable;
 
 	private String currentUser;
 	private ArrayList<Location> locationList;
@@ -38,7 +42,13 @@ public class Manager {
 
 //		connMySQL = new ConnectionMySQL("jdbc:mysql://localhost/Dafity_DB?user=user&password=123");
 		connMySQL = new ConnectionMySQL("jdbc:mysql://localhost/Dafity_DB?user=root&password=");
-		createDBTables();
+		try {
+			createDBTables();
+			dbAvailable = true;
+		} catch (SQLException e) {
+			dbAvailable = false;
+			System.err.println("MySQL no disponible, ejecutando en modo local: " + e.getMessage());
+		}
 	}
 
 	private void loadData() {
@@ -149,26 +159,31 @@ public class Manager {
 	}
 
 	public void insertPromocion(int idPromocion, int descuento, int stock) throws SQLException {
-		connMySQL.insertPromocion(idPromocion, descuento, stock);
+		if (dbAvailable)
+			connMySQL.insertPromocion(idPromocion, descuento, stock);
 	}
 
 	public void insertDetalle(int idFactura, int idProducto, int idPromocion, int idCantidad, double precio)
 			throws SQLException {
-		connMySQL.insertDetalle(idFactura, idProducto, idPromocion, idCantidad, precio);
+		if (dbAvailable)
+			connMySQL.insertDetalle(idFactura, idProducto, idPromocion, idCantidad, precio);
 	}
 
 	public void insertOrder(int idFactura, int idPersona, Date fechaFactura, double precioCompleto,
 			int descuentoCompleto, double pagoTotal) throws SQLException {
 //		System.out.println("id problema .."+idPersona);
-		connMySQL.insertFactura(idFactura, idPersona, fechaFactura, precioCompleto, descuentoCompleto, pagoTotal);
+		if (dbAvailable)
+			connMySQL.insertFactura(idFactura, idPersona, fechaFactura, precioCompleto, descuentoCompleto, pagoTotal);
 	}
 
 	public void alterStockProd(int idProducto, int newStock) throws SQLException {
-		connMySQL.alterStockProd(idProducto, newStock);
+		if (dbAvailable)
+			connMySQL.alterStockProd(idProducto, newStock);
 	}
 
 	public void deleteBDUser(int idUser) throws SQLException {
-		connMySQL.deletUser(idUser);
+		if (dbAvailable)
+			connMySQL.deletUser(idUser);
 	}
 
 	public Product searchProduct(String name) {
@@ -246,15 +261,17 @@ public class Manager {
 	public void addProduct(Product product) throws SQLException {
 		productList.add(product);
 
-		connMySQL.insertProducto(product.getId(), product.getName(),
-				product.getStock(), product.getPrice(), product.getSize());
+		if (dbAvailable)
+			connMySQL.insertProducto(product.getId(), product.getName(),
+					product.getStock(), product.getPrice(), product.getSize());
 	}
 	
 	public void addClient(Client client) throws SQLException {
 		clientList.add(client);
-		connMySQL.insertClient(client.getId(), client.getFirstName(), client.getLastName(), client.getDocumentType(),
-				client.getDocumentId(), new Date(client.getBirthDateSt()), client.getUser(), client.getPassword(),
-				cityNameToId(client.getCityName()));
+		if (dbAvailable)
+			connMySQL.insertClient(client.getId(), client.getFirstName(), client.getLastName(), client.getDocumentType(),
+					client.getDocumentId(), new Date(client.getBirthDateSt()), client.getUser(), client.getPassword(),
+					cityNameToId(client.getCityName()));
 	}
 	public int cityNameToId(String name) {
 		for (int i = 0; i < locationList.size(); i++) {
@@ -286,13 +303,14 @@ public class Manager {
 //		System.out.println("lo convierto...."+cityNameToId(client.getCityName()));
 		
 
-		connMySQL.alterUser(idClient,client.getFirstName(), client.getLastName(),
-				client.getDocumentType(), client.getDocumentId(), 
-				new Date(client.getBirthDateSt()), client.getUser(),
-				client.getPassword(), 
-//				Integer.parseInt(client.getCityName())
-				cityNameToId(client.getCityName())
-				);
+		if (dbAvailable)
+			connMySQL.alterUser(idClient,client.getFirstName(), client.getLastName(),
+					client.getDocumentType(), client.getDocumentId(), 
+					new Date(client.getBirthDateSt()), client.getUser(),
+					client.getPassword(), 
+//					Integer.parseInt(client.getCityName())
+					cityNameToId(client.getCityName())
+					);
 	}
 
 	public void deleteProduct(int index) {
@@ -310,7 +328,9 @@ public class Manager {
 
 	public boolean alterProducto(int idProducto, String nombreProducto, int newStock, double precio, String talla)
 			throws SQLException {
-		return connMySQL.alterProducto(idProducto, nombreProducto, newStock, precio, talla);
+		if (dbAvailable)
+			return connMySQL.alterProducto(idProducto, nombreProducto, newStock, precio, talla);
+		return true;
 	}
 //	public static Product updateProduct(String name,double price,
 //			 int discountPercentage,String size,int stock, String file,int id) throws IOException, URISyntaxException {//ACTUALIZAR--|	
@@ -586,16 +606,54 @@ public class Manager {
 		currentUser = "";
 	}
 	public String getTopProductList() throws SQLException {
-		return getTop(connMySQL.getTopProductos());
+		if (dbAvailable)
+			return getTop(connMySQL.getTopProductos());
+		Map<String, Integer> counts = new HashMap<>();
+		for (Order order : orderList) {
+			counts.merge(order.getProductName(), 1, Integer::sum);
+		}
+		return getTop(buildTopFromCounts(counts));
 	}
 	public String getTopClientList() throws SQLException {
-		return getTop(connMySQL.getTopClients());
+		if (dbAvailable)
+			return getTop(connMySQL.getTopClients());
+		Map<String, Integer> counts = new HashMap<>();
+		for (Order order : orderList) {
+			counts.merge(order.getClientName(), 1, Integer::sum);
+		}
+		return getTop(buildTopFromCounts(counts));
 	}
 	public String getTopMaxPriceProduct() throws SQLException {
-		return getTop(connMySQL.getTopMaxPrecio());
+		if (dbAvailable)
+			return getTop(connMySQL.getTopMaxPrecio());
+		Map<String, Integer> prices = new HashMap<>();
+		for (Product product : productList) {
+			prices.put(product.getName(), (int) product.getPrice());
+		}
+		return getTop(buildTopFromCounts(prices));
 	}
 	public String getTopClientByRegion() throws SQLException {
-		return getTop(connMySQL.getTopRegiones());
+		if (dbAvailable)
+			return getTop(connMySQL.getTopRegiones());
+		Map<String, Integer> counts = new HashMap<>();
+		for (Client client : clientList) {
+			String city = client.getCityName() != null ? client.getCityName() : "N/A";
+			counts.merge(city, 1, Integer::sum);
+		}
+		return getTop(buildTopFromCounts(counts));
+	}
+	private ArrayList<String[]> buildTopFromCounts(Map<String, Integer> counts) {
+		List<Map.Entry<String, Integer>> entries = new ArrayList<>(counts.entrySet());
+		entries.sort((a, b) -> Integer.compare(b.getValue(), a.getValue()));
+		ArrayList<String[]> top = new ArrayList<>();
+		for (int i = 0; i < Math.min(5, entries.size()); i++) {
+			Map.Entry<String, Integer> entry = entries.get(i);
+			top.add(new String[] { entry.getKey(), Integer.toString(entry.getValue()) });
+		}
+		if (top.isEmpty()) {
+			top.add(new String[] { "Sin datos", "0" });
+		}
+		return top;
 	}
 	public String getTop(ArrayList<String []> list) throws SQLException {
 		String data;
