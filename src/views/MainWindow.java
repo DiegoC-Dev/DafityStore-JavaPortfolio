@@ -46,9 +46,10 @@ public class MainWindow extends JFrame {
 	public MainWindow(ActionListener listener, ArrayList<Product> productList, ArrayList<Client> clientList,
 			ArrayList<Order> orderList, ArrayList<Location> locationList) throws IOException {
 		this.listener = listener;
-		setSize(Constants.SIZE);
-		setLocation((int) (Constants.SCREEN_SIZE.getWidth() / 2) - (getWidth() / 2),
-				(int) (Constants.SCREEN_SIZE.getHeight() / 2) - (getHeight() / 2));
+		int adaptiveW = Math.min(Constants.SIZE.width, Math.max(320, Constants.SCREEN_SIZE.width));
+		int adaptiveH = Math.min(Constants.SIZE.height, Math.max(240, Constants.SCREEN_SIZE.height));
+		setSize(adaptiveW, adaptiveH);
+		setLocationRelativeTo(null);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setTitle(TITLE);
 

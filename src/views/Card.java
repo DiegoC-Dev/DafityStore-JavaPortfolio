@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionListener;
+import java.io.File;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -39,7 +40,8 @@ public class Card extends JPanel{
 		centralPanel.setBackground(Constants.PRIMARY_COLOR);
 		
 		JLabel lbImg = new JLabel();
-		Image image= new ImageIcon(componentList.getImgPath()).getImage().getScaledInstance(200, 200, Image.SCALE_SMOOTH);
+		String imgPath = resolveImagePath(componentList.getImgPath());
+		Image image= new ImageIcon(imgPath).getImage().getScaledInstance(200, 200, Image.SCALE_SMOOTH);
 		lbImg.setBackground(Constants.PRIMARY_COLOR);
 		lbImg.setIcon(new ImageIcon(image));
 		lbImg.setHorizontalAlignment(SwingConstants.CENTER);
@@ -49,6 +51,18 @@ public class Card extends JPanel{
 		
 
 		add(centralPanel);
+	}
+
+	private String resolveImagePath(String path) {
+		File file = new File(path);
+		if (file.exists()) {
+			return path;
+		}
+		File appFile = new File("/app/" + path.replaceFirst("^\\./", ""));
+		if (appFile.exists()) {
+			return appFile.getPath();
+		}
+		return path;
 	}
 
 	private void createLabelsBar(Product componentList, JPanel centralPanel) {

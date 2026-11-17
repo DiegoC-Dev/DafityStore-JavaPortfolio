@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dafity Store - Java Portfolio</title>
+    <!-- CheerpJ WebAssembly Loader (4.2) -->
+    <script src="https://cjrtnc.leaningtech.com/4.2/loader.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+        }
+        #loading {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            color: #e6edf3;
+            background-color: #0d1117;
+            z-index: 10;
+            gap: 16px;
+        }
+        .spinner {
+            width: 44px;
+            height: 44px;
+            border: 4px solid rgba(204, 0, 102, 0.25);
+            border-top-color: #cc0066;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        #app-wrapper {
+            box-shadow: 0 0 32px rgba(204, 0, 102, 0.25);
+            border-radius: 8px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="spinner"></div>
+        <div id="loading-text">Cargando Dafity Store...</div>
+    </div>
+    <div id="app-wrapper"></div>
+
+    <script>
+        function getViewportDisplaySize() {
+            const maxW = Math.max(320, window.innerWidth - 16);
+            const maxH = Math.max(240, window.innerHeight - 16);
+            const targetW = 1000;
+            const targetH = 650;
+            const scale = Math.min(1, maxW / targetW, maxH / targetH);
+            return {
+                w: Math.floor(targetW * scale),
+                h: Math.floor(targetH * scale)
+            };
+        }
+
+        async function run() {
+            try {
+                const { w, h } = getViewportDisplaySize();
+                const wrapper = document.getElementById('app-wrapper');
+                wrapper.style.width = `${w}px`;
+                wrapper.style.height = `${h}px`;
+
+                await cheerpjInit();
+                cheerpjCreateDisplay(w, h, wrapper);
+
+                const loading = document.getElementById('loading');
+                if (loading) loading.style.display = 'none';
+
+                await cheerpjRunJar("/app/DafityStore.jar");
+            } catch (err) {
+                console.error("Error al iniciar CheerpJ:", err);
+                const loading = document.getElementById('loading');
+                if (loading) {
+                    loading.innerHTML = '<p style="color: #ff6b6b;">Error al cargar la aplicación: ' + (err.message || err) + '</p>';
+                }
+            }
+        }
+        run();
+    </script>
+</body>
+</html>

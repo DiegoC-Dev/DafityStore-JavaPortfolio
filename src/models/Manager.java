@@ -41,13 +41,19 @@ public class Manager {
 		 loadData();
 
 //		connMySQL = new ConnectionMySQL("jdbc:mysql://localhost/Dafity_DB?user=user&password=123");
-		connMySQL = new ConnectionMySQL("jdbc:mysql://localhost/Dafity_DB?user=root&password=");
-		try {
-			createDBTables();
-			dbAvailable = true;
-		} catch (SQLException e) {
+		connMySQL = new ConnectionMySQL("jdbc:mysql://localhost/Dafity_DB?user=root&password=&connectTimeout=1500&socketTimeout=3000");
+		boolean isWebRuntime = System.getProperty("java.vendor", "").toLowerCase().contains("cheerpj")
+				|| new java.io.File("/app/DafityStore.jar").exists();
+		if (isWebRuntime) {
 			dbAvailable = false;
-			System.err.println("MySQL no disponible, ejecutando en modo local: " + e.getMessage());
+		} else {
+			try {
+				createDBTables();
+				dbAvailable = true;
+			} catch (SQLException e) {
+				dbAvailable = false;
+				System.err.println("MySQL no disponible, ejecutando en modo local: " + e.getMessage());
+			}
 		}
 	}
 
